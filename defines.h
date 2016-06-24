@@ -49,8 +49,10 @@
 #define ZERO_OFS         15
 #define DIFF_OFS         10
 
+//ADC (MCP3008) channels
 #define X_AX_CH         0
 #define Y_AX_CH         1
+#define BATT_LEV        6
 
 #define DISPL_UPD       50
 
@@ -65,6 +67,8 @@
 #define CHG_THR         2
 #define Z_THR           100
 
+#define ON_BATTERY      IOexp.digitalRead(7) == 0
+
 int calcPercent(unsigned int adc);
 int8_t check_touch_slide();
 int16_t btn_color(uint8_t btn);
@@ -78,6 +82,7 @@ void y_value(unsigned int value, uint8_t scale);
 void draw_info_box(uint8_t scale);
 void draw_view(uint8_t view);
 void printVA_data(void);
+void draw_battery(void);
 
 
 #endif

@@ -3,11 +3,13 @@
 #include <TouchScreen.h>
 #include <Adafruit_TFTLCD.h>
 #include <Adafruit_INA219.h>
+#include <Adafruit_MCP23017.h>
 
 
 extern Adafruit_TFTLCD tft;
 extern TouchScreen ts;
 extern Adafruit_INA219 currSens;
+extern Adafruit_MCP23017 IOexp;
 extern float ofs_24V;
 extern uint16_t ofs_5V;
 
@@ -15,6 +17,7 @@ void draw_view(uint8_t view)
 {
   if(view > 3) view = 3;
   tft.fillScreen(BLACK);
+  if(ON_BATTERY) draw_battery();
   switch(view)
   {
     case 0:

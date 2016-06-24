@@ -33,7 +33,8 @@ float ofs_24V = 0.0;
 float load_current = 0.0;
 float bus_volt = 0.0;
 uint16_t ofs_5V = 0;
-
+boolean pwr_stat ;  // 0 - on mains  1 - on battery
+boolean prev_pwr ;
 
 void setup(void) {
 
@@ -51,16 +52,23 @@ void setup(void) {
   IOexp.begin();
   currSens.begin();
   
-  IOexp.pinMode(8,OUTPUT);
-  IOexp.pinMode(9,OUTPUT);
+  IOexp.pinMode(8,OUTPUT); // switch 24V to joystick
+  IOexp.pinMode(9,OUTPUT); // switch 5V to joystick
+  IOexp.pinMode(10,OUTPUT); // switch 5V batt to 5->24V converter
+  IOexp.pinMode(11,INPUT); // axis at 0 position (0V) - only for CVS
+  IOexp.pinMode(12,OUTPUT); // switch battery charger
   
   ofs_24V = currSens.getShuntVoltage_mV();
   
   IOexp.digitalWrite(8,HIGH);
-  
+  //if(ON_BATTERY) IOexp.digitalWrite(10,HIGH);
+  //pwr_stat = ON_BATTERY;
+  //prev_pwr = pwr_stat;
   
   //draw_view(0);
   
+  //Serial.print("ON_BATTERY  :");
+  //Serial.println(ON_BATTERY);
   SPI.begin();
   //pinMode(SS,OUTPUT);
   //digitalWrite(SS,LOW);
@@ -87,6 +95,18 @@ void loop()
   unsigned int y_adc = 512; 
   int8_t page_chg = 0;
   
+  //if(ON_BATTERY) IOexp.digitalWrite(10,HIGH);
+  //else IOexp.digitalWrite(10,LOW);
+  
+  pwr_stat = ON_BATTERY;
+  if(pwr_stat != prev_pwr)
+  {
+    if(pwr_stat) IOexp.digitalWrite(10,HIGH);
+    else IOexp.digitalWrite(10,LOW);
+    prev_pwr = pwr_stat;
+    last_view = 10; // force redraw
+  }
+  
   if(cur_view != last_view)
   {
     draw_view(cur_view);
@@ -106,9 +126,11 @@ void loop()
     display_upd = millis();
     x_adc = extADC.readADC(X_AX_CH);
     y_adc = extADC.readADC(Y_AX_CH);
+    if(ON_BATTERY) update_battery();
     switch(cur_view)
     {
       case 0:
+        //draw_battery();
         x_axis(x_adc,false);
         x_value(x_adc,1);
         y_axis(y_adc,false);
@@ -154,6 +176,41 @@ void loop()
   
 }
 
+
+void update_battery()
+{
+  uint16_t batt_adc = extADC.readADC(BATT_LEV);
+  //byte batt_lev = map(batt_adc,500,800,0,4);
+  uint16_t volt = map(batt_adc,0,1023,0,500);
+  char buf[20];
+  snprintf(buf,19,"%d.%d",volt / 100, volt % 100);
+  if(volt > 270) tft.fillRect(272,8,8,10,WHITE);
+  else tft.fillRect(272,8,8,10,BLACK);
+  if(volt > 300) tft.fillRect(282,8,8,10,WHITE);
+  else tft.fillRect(282,8,8,10,BLACK);
+  if(volt > 340) tft.fillRect(292,8,8,10,WHITE);
+  else tft.fillRect(292,8,8,10,BLACK);
+  if(volt > 360) tft.fillRect(302,8,8,10,WHITE);
+  else tft.fillRect(302,8,8,10,BLACK);
+  tft.fillRect(280,25,30,10,BLACK);
+  tft.setTextSize(1);
+  tft.setTextColor(WHITE);
+  tft.setCursor(280,25);
+  tft.print(buf);
+}
+
+void draw_battery()
+{
+  tft.drawLine(270,5,315,5,WHITE);
+  tft.drawLine(315,5,315,10,WHITE);
+  tft.drawLine(315,10,319,10,WHITE);
+  tft.drawLine(319,10,319,15,WHITE);
+  tft.drawLine(319,15,315,15,WHITE);
+  tft.drawLine(315,15,315,20,WHITE);
+  tft.drawLine(315,20,270,20,WHITE);
+  tft.drawLine(270,20,270,5,WHITE);
+  
+}
 
 #define BUFFPIXEL 20
 
